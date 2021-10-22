@@ -1,0 +1,63 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>波士顿房价预测实验报告</title>
+  <link rel="stylesheet" href="https://stackedit.io/style.css" />
+</head>
+
+<body class="stackedit">
+  <div class="stackedit__html"><h1><a id="_0"></a>实验（一）</h1>
+<h3><a id="_1"></a>代码段：</h3>
+<pre><code class="prism language-python"><span class="token comment"># 实验环境：MindSpore-python3.7-aarch64</span>
+
+<span class="token comment"># 配置环境，导入库函数</span>
+<span class="token keyword">import</span> os
+<span class="token comment"># os.environ['DEVICE_ID'] = '0'</span>
+<span class="token keyword">import</span> numpy <span class="token keyword">as</span> np
+<span class="token keyword">import</span> mindspore <span class="token keyword">as</span> ms
+<span class="token keyword">from</span> mindspore <span class="token keyword">import</span> nn
+<span class="token keyword">from</span> mindspore <span class="token keyword">import</span> context
+context<span class="token punctuation">.</span>set_context<span class="token punctuation">(</span>mode<span class="token operator">=</span>context<span class="token punctuation">.</span>GRAPH_MODE<span class="token punctuation">,</span> device_target<span class="token operator">=</span><span class="token string">"Ascend"</span><span class="token punctuation">)</span> <span class="token comment"># CPU</span>
+
+x <span class="token operator">=</span> np<span class="token punctuation">.</span>arange<span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">5</span><span class="token punctuation">,</span> <span class="token number">5</span><span class="token punctuation">,</span> <span class="token number">0.3</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token number">32</span><span class="token punctuation">]</span><span class="token punctuation">.</span>reshape<span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token number">32</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+y <span class="token operator">=</span> <span class="token operator">-</span><span class="token number">5</span> <span class="token operator">*</span> x <span class="token operator">+</span> <span class="token number">0.1</span> <span class="token operator">*</span> np<span class="token punctuation">.</span>random<span class="token punctuation">.</span>normal<span class="token punctuation">(</span>loc<span class="token operator">=</span><span class="token number">0.0</span><span class="token punctuation">,</span> scale<span class="token operator">=</span><span class="token number">20.0</span><span class="token punctuation">,</span> size<span class="token operator">=</span>x<span class="token punctuation">.</span>shape<span class="token punctuation">)</span>
+
+net <span class="token operator">=</span> nn<span class="token punctuation">.</span>Dense<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span>
+loss_fn <span class="token operator">=</span> nn<span class="token punctuation">.</span>loss<span class="token punctuation">.</span>MSELoss<span class="token punctuation">(</span><span class="token punctuation">)</span>
+opt <span class="token operator">=</span> nn<span class="token punctuation">.</span>optim<span class="token punctuation">.</span>SGD<span class="token punctuation">(</span>net<span class="token punctuation">.</span>trainable_params<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> learning_rate <span class="token operator">=</span> <span class="token number">0.01</span><span class="token punctuation">)</span>
+with_loss <span class="token operator">=</span> nn<span class="token punctuation">.</span>WithLossCell<span class="token punctuation">(</span>net<span class="token punctuation">,</span> loss_fn<span class="token punctuation">)</span>
+train_step <span class="token operator">=</span> nn<span class="token punctuation">.</span>TrainOneStepCell<span class="token punctuation">(</span>with_loss<span class="token punctuation">,</span> opt<span class="token punctuation">)</span><span class="token punctuation">.</span>set_train<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token comment"># 观察x和y的形状</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>x<span class="token punctuation">.</span>shape<span class="token punctuation">)</span> <span class="token comment"># (32, 1)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>y<span class="token punctuation">.</span>shape<span class="token punctuation">)</span> <span class="token comment"># (32, 1)</span>
+
+<span class="token keyword">for</span> epoch <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    loss <span class="token operator">=</span> train_step<span class="token punctuation">(</span>ms<span class="token punctuation">.</span>Tensor<span class="token punctuation">(</span>x<span class="token punctuation">,</span> ms<span class="token punctuation">.</span>float32<span class="token punctuation">)</span><span class="token punctuation">,</span> ms<span class="token punctuation">.</span>Tensor<span class="token punctuation">(</span>y<span class="token punctuation">,</span> ms<span class="token punctuation">.</span>float32<span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'epoch: {0}, loss is {1}'</span><span class="token punctuation">.</span><span class="token builtin">format</span><span class="token punctuation">(</span>epoch<span class="token punctuation">,</span> loss<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+wb <span class="token operator">=</span> <span class="token punctuation">[</span>x<span class="token punctuation">.</span>asnumpy<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">for</span> x <span class="token keyword">in</span> net<span class="token punctuation">.</span>trainable_params<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">]</span>
+w<span class="token punctuation">,</span> b <span class="token operator">=</span> np<span class="token punctuation">.</span>squeeze<span class="token punctuation">(</span>wb<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">,</span> np<span class="token punctuation">.</span>squeeze<span class="token punctuation">(</span>wb<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'The true linear function is y = -5 * x + 0.1'</span><span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'The trained linear model is y = {0} * x + {1}'</span><span class="token punctuation">.</span><span class="token builtin">format</span><span class="token punctuation">(</span>w<span class="token punctuation">,</span> b<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token keyword">for</span> i <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">10</span><span class="token punctuation">,</span> <span class="token number">11</span><span class="token punctuation">,</span> <span class="token number">5</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'x = {0}, predicted y = {1}'</span><span class="token punctuation">.</span><span class="token builtin">format</span><span class="token punctuation">(</span>i<span class="token punctuation">,</span> net<span class="token punctuation">(</span>ms<span class="token punctuation">.</span>Tensor<span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">,</span> ms<span class="token punctuation">.</span>float32<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token comment"># 作图</span>
+<span class="token keyword">from</span> matplotlib <span class="token keyword">import</span> pyplot <span class="token keyword">as</span> plt
+plt<span class="token punctuation">.</span>scatter<span class="token punctuation">(</span>x<span class="token punctuation">,</span> y<span class="token punctuation">,</span> label<span class="token operator">=</span><span class="token string">'Samples'</span><span class="token punctuation">)</span>
+plt<span class="token punctuation">.</span>plot<span class="token punctuation">(</span>x<span class="token punctuation">,</span> w <span class="token operator">*</span> x <span class="token operator">+</span> b<span class="token punctuation">,</span> c <span class="token operator">=</span> <span class="token string">'r'</span><span class="token punctuation">,</span> label<span class="token operator">=</span><span class="token string">'True function'</span><span class="token punctuation">)</span>
+plt<span class="token punctuation">.</span>plot<span class="token punctuation">(</span>x<span class="token punctuation">,</span> <span class="token operator">-</span><span class="token number">5</span> <span class="token operator">*</span> x <span class="token operator">+</span> <span class="token number">0.1</span><span class="token punctuation">,</span> c<span class="token operator">=</span><span class="token string">'b'</span><span class="token punctuation">,</span> label<span class="token operator">=</span><span class="token string">'Trained model'</span><span class="token punctuation">)</span>
+plt<span class="token punctuation">.</span>legend<span class="token punctuation">(</span><span class="token punctuation">)</span>
+plt<span class="token punctuation">.</span>show<span class="token punctuation">(</span><span class="token punctuation">)</span>
+</code></pre>
+<h3><a id="_49"></a>实验（一）结果：</h3>
+<p><img src="https://img-blog.csdnimg.cn/017269ae15eb4a5c94d7977b6a28142e.png?x-oss-process=image/watermark,type_ZHJvaWRzYW5zZmFsbGJhY2s,shadow_50,text_Q1NETiBA5L2g6L-Z5Liq5Luj56CB5oiR55yL5LiN5oeC,size_20,color_FFFFFF,t_70,g_se,x_16" alt="请添加图片描述"></p>
+</div>
+</body>
+
+</html>
